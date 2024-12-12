@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sense HAT Dashboard</title>
+    <link href="http://Wizardmon/css/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Previous styles remain the same */
+        body {
+            margin: 0;
+            background: #0a0a0a;
+            color: #00f3ff;
+            font-family: monospace;
+            min-height: 100vh;
+        }
+
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            object-fit: cover;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+        }
+
+        .cyber-panel {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #00f3ff;
+            box-shadow: 0 0 10px #00f3ff;
+            padding: 20px;
+            margin: 20px;
+            backdrop-filter: blur(3px);
+        }        
+        .cyber-title {
+            color: #ff00ff;
+            text-shadow: 0 0 5px #ff00ff;
+        }
+                
+        .message-log {
+            height: 400px; /* Fixed height */
+            overflow-y: auto;
+            padding-right: 10px; /* Space for scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: #00f3ff rgba(0, 243, 255, 0.1);
+        }
+           /* Webkit scrollbar styles */
+        .message-log::-webkit-scrollbar {
+            width: 8px;
+
+        }
+        .message-log::-webkit-scrollbar-track {
+            background: rgba(0, 243, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .message-log::-webkit-scrollbar-thumb {
+            background: #00f3ff;
+            border-radius: 4px;
+            box-shadow: 0 0 5px #00f3ff;
+        }
+
+        .message-log::-webkit-scrollbar-thumb:hover {
+            background: #00d8e6;
+            box-shadow: 0 0 10px #00f3ff;
+        }
+
+        /* Header styles for message history */
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .message-item {
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .message-item:hover {
+            background-color: rgba(0, 243, 255, 0.1);
+        }
+        
+
+        /* Clear button styles */
+        .clear-btn {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background: #00f3ff;
+            color: #0a0a0a;
+            box-shadow: 0 0 10px #00f3ff;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2196F3;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .input-field {
+            background: #1a1a1a;
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 8px;
+            width: 100%;
+        }
+        
+        .settings-btn {
+            background: #1a1a1a;
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3
+        }
+        
+        .settings-btn:hover {
+            background: #00f3ff;
+            color: #1a1a1a;
+        }
+
+        input:checked + .slider {
+            background-color: #ff00ff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 40;
+    }        
+
+    #ignoreDialog {
+        background: rgba(10, 10, 10, 0.95);
+        border: 2px solid #00f3ff;
+        box-shadow: 0 0 20px #00f3ff;
+        min-width: 300px;
+        z-index: 50;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #00f3ff; }
+            50% { box-shadow: 0 0 20px #00f3ff; }
+            100% { box-shadow: 0 0 5px #00f3ff; }
+        }
+        
+        .cyber-panel {
+            animation: glow 2s infinite;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen p-4">
+
+<video class="video-background" autoplay muted loop playsinline>
+    <source src="{{ url_for('static', filename='video/display.mp4') }}" type="video/mp4">
+</video>
+
+    <audio id="hoverSound" preload="auto">
+        <source src="/sounds/menu-hover.wav" type="audio/wav">
+    </audio>
+    <audio id="clickSound" preload="auto">
+        <source src="/sounds/Menu-sel1.wav" type="audio/wav">
+    </audio>
+    <audio id="dropdownSound" preload="auto">
+        <source src="/sounds/Menu-back.wav" type="audio/wav">
+    </audio>
+
+    <!-- Background music -->
+    <audio autoplay loop id="backgroundAudio" style="display: none;">
+        <source src="{{ url_for('static', filename='audio/Perfect_Dark.mp32') }}" type="audio/mp3">
+    </audio>
+
+<audio autoplay loop id="backgroundAudio" style="display: none;">
+    <source src="{{ url_for('static', filename='audio/Perfect_Dark.mp32') }}" type="audio/mp3">
+</audio>
+
+    <div class="container mx-auto relative z-10">
+       <h1 class="text-4xl cyber-title mb-8">SenseHAT Alert Dashboard</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-6">
+                <div class="cyber-panel p-4">
+                    <h2 class="text-2xl mb-4">Message Settings</h2>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                        <div>
+                            <label>Default Text Color</label>
+                            <select id="defaultColor" class="input-field">
+                                <option value="[255,0,0]">Red</option>
+                                <option value="[0,255,0]">Green</option>
+                                <option value="[0,0,255]">Blue</option>
+                                <option value="[255,255,255]">White</option>
+                                <option value="[255,0,255]">Magenta</option>
+                                <option value="[0,255,255]">Cyan</option>
+                                <option value="[255,255,0]">Yellow</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label>Scroll Speed</label>
+                            <select id="scrollSpeed" class="input-field">
+                                <option value="0.04">Very Fast</option>
+                                <option value="0.08">Fast</option>
+                                <option value="0.12" selected>Normal</option>
+                                <option value="0.16">Slow</option>
+                                <option value="0.20">Very Slow</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label>Priority Level</label>
+                            <select id="priority" class="input-field">
+                                <option value="0">High (0)</option>
+                                <option value="1" selected>Normal (1)</option>
+                                <option value="2">Low (2)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label>Use Text-to-Speech</label>
+                            <select id="useEspeak" class="input-field">
+                                <option value="1">Yes</option>
+                                <option value="0" selected>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label>Test Message</label>
+                        <input type="text" id="testMessage" class="input-field" placeholder="Enter test message">
+                        <button onclick="sendTestMessage()" class="settings-btn mt-2">Send Test Message</button>
+                    </div>
+                </div>
+                
+                <div class="cyber-panel p-4">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="tempUnitToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="ml-2">Temperature Unit: <span id="currentUnit">F</span></span>
+                </div>
+
+                <div class="cyber-panel p-4">
+                    <h2 class="text-2xl mb-4">Environmental Data</h2>
+                    <div class="grid grid-cols-2 gap-4" id="envData">
+                        <div>Temperature: <span id="temperature">--</span> <span class="temp-unit">F</span></div>
+                        <div>Humidity: <span id="humidity">--</span>%</div>
+                        <div>Pressure: <span id="pressure">--</span> hPa</div>
+                        <div>Dew Point: <span id="dewPoint">--</span> <span class="temp-unit">F</span></div>
+                        <div>Altitude: <span id="altitude">--</span> m</div>
+                    </div>
+                </div>
+
+                <div class="cyber-panel p-4">
+                    <h2 class="text-2xl mb-4">Motion Sensors</h2>
+                    <div class="grid grid-cols-1 gap-4" id="motionData">
+                        <div>Gyroscope (deg/s):
+                            <div class="ml-4">
+                                X: <span id="gyroX">--</span>
+                                Y: <span id="gyroY">--</span>
+                                Z: <span id="gyroZ">--</span>
+                            </div>
+                        </div>
+                        <div>Accelerometer (G):
+                            <div class="ml-4">
+                                X: <span id="accelX">--</span>
+                                Y: <span id="accelY">--</span>
+                                Z: <span id="accelZ">--</span>
+                            </div>
+                        </div>
+                        <div>Magnetometer (uT):
+                            <div class="ml-4">
+                                X: <span id="magX">--</span>
+                                Y: <span id="magY">--</span>
+                                Z: <span id="magZ">--</span>
+                            </div>
+                        </div>
+                        <div>Last Update: <span id="timestamp">--</span></div>
+                    </div>
+                </div>
+            </div>
+       
+     <!-- p-4 is half of container -->    
+    <div class="cyber-panel p-16 flex flex-col h-full">
+        <div class="message-header">
+            <h2 class="text-2xl">Message History</h2>
+            <button onclick="clearMessages()" class="clear-btn">Clear</button>
+        </div>
+        <div class="message-log" id="messageLog"></div>
+    </div>
+
+    <!-- Ignore Dialog -->
+    <div id="overlay" class="overlay hidden"></div>
+    <div id="ignoreDialog" class="hidden cyber-panel p-4">
+        <h3 class="text-xl mb-2">Ignore Message</h3>
+        <p id="ignoreMessageText" class="mb-4"></p>
+        <input type="number" id="ignoreDuration" class="input-field" placeholder="Duration (minutes)" value="60" min="1">
+        <div class="flex justify-end mt-4 space-x-2">
+            <button onclick="cancelIgnore()" class="settings-btn">Cancel</button>
+            <button onclick="confirmIgnore()" class="settings-btn">Ignore</button>
+        </div>
+    </div>
+
+    <script>
+        let lastSensorUpdate = 0;
+        let useCelsius = false;
+        let selectedMessage = '';
+        
+    // Auto-start audio with reduced volume
+    document.addEventListener('DOMContentLoaded', function() {
+        const audio = document.getElementById('backgroundAudio');
+        audio.volume = 0.3; // 30% volume, adjust as needed
+    });
+    
+        document.getElementById('overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cancelIgnore();
+            }
+        });
+
+        // Add escape key handler to close dialog
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cancelIgnore();
+            }
+        });
+
+    // Handle autoplay restrictions
+    document.body.addEventListener('click', function() {
+        const audio = document.getElementById('backgroundAudio');
+        if (audio.paused) {
+            audio.play();
+        }
+    });
+
+        // Temperature toggle handler
+        document.getElementById('tempUnitToggle').addEventListener('change', function() {
+            playSound(clickSound);
+            useCelsius = this.checked;
+            document.getElementById('currentUnit').textContent = useCelsius ? 'C' : 'F';
+            document.querySelectorAll('.temp-unit').forEach(unit => {
+                unit.textContent = useCelsius ? 'C' : 'F';
+            });
+            updateSensorData();
+        });
+
+        function clearMessages() {
+            playSound(clickSound);
+            fetch('/api/clear-messages', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('messageLog').innerHTML = '';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function showIgnoreDialog(message) {
+            playSound(clickSound);
+            selectedMessage = message;
+            document.getElementById('ignoreMessageText').textContent = `"${message}"`;
+            document.getElementById('ignoreDialog').classList.remove('hidden');
+            document.getElementById('overlay').classList.remove('hidden');
+        }
+
+        function cancelIgnore() {
+            playSound(clickSound);
+            document.getElementById('ignoreDialog').classList.add('hidden');
+            document.getElementById('overlay').classList.add('hidden');
+            selectedMessage = '';
+        }
+
+        function confirmIgnore() {
+            playSound(clickSound);
+            const duration = document.getElementById('ignoreDuration').value;
+            
+            fetch('/api/ignore-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: selectedMessage,
+                    duration: parseInt(duration)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    console.log('Message ignored successfully');
+                    cancelIgnore();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                cancelIgnore();
+            });
+        }
+
+        // Sound effect elements
+        const hoverSound = document.getElementById('hoverSound');
+        const clickSound = document.getElementById('clickSound');
+        const dropdownSound = document.getElementById('dropdownSound');
+
+        // Function to play sounds
+        function playSound(audioElement) {
+            if (audioElement && audioElement.readyState >= 2) {
+                audioElement.currentTime = 0;
+                audioElement.play().catch(e => console.log("Sound play failed:", e));
+            }
+        }
+
+
+        // Message sending function
+        function sendTestMessage() {
+            playSound(clickSound);
+            const message = document.getElementById('testMessage').value;
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            const color = document.getElementById('defaultColor').value;
+            const speed = document.getElementById('scrollSpeed').value;
+            const priority = document.getElementById('priority').value;
+            const espeak = document.getElementById('useEspeak').value;
+            
+            const testData = `${priority}|${message} |${color}|${speed}||${espeak}`;
+            
+            fetch('/api/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: testData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('testMessage').value = '';
+                    console.log('Message sent successfully');
+                } else {
+                    console.error('Failed to send message:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Update functions
+        function updateSensorData() {
+            const now = Date.now();
+            if (now - lastSensorUpdate >= 60000) {
+                fetch('/api/sensor-data')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('temperature').textContent = 
+                            useCelsius ? data.temperature_c.toFixed(1) : data.temperature_f.toFixed(1);
+                        document.getElementById('dewPoint').textContent = 
+                            useCelsius ? data.dew_point_c.toFixed(1) : data.dew_point_f.toFixed(1);
+                        
+                        document.getElementById('humidity').textContent = data.humidity.toFixed(1);
+                        document.getElementById('pressure').textContent = data.pressure.toFixed(1);
+                        document.getElementById('altitude').textContent = data.altitude.toFixed(1);
+                        
+                        document.getElementById('gyroX').textContent = data.gyro_x.toFixed(2);
+                        document.getElementById('gyroY').textContent = data.gyro_y.toFixed(2);
+                        document.getElementById('gyroZ').textContent = data.gyro_z.toFixed(2);
+                        
+                        document.getElementById('accelX').textContent = data.accel_x.toFixed(2);
+                        document.getElementById('accelY').textContent = data.accel_y.toFixed(2);
+                        document.getElementById('accelZ').textContent = data.accel_z.toFixed(2);
+                        
+                        document.getElementById('magX').textContent = data.mag_x.toFixed(2);
+                        document.getElementById('magY').textContent = data.mag_y.toFixed(2);
+                        document.getElementById('magZ').textContent = data.mag_z.toFixed(2);
+                        
+                        document.getElementById('timestamp').textContent = data.timestamp;
+                        lastSensorUpdate = now;
+                    });
+            }
+        }
+
+        function updateMessageLog() {
+            const log = document.getElementById('messageLog');
+            const shouldScroll = log.scrollTop + log.clientHeight === log.scrollHeight;
+            
+            fetch('/api/message-history')
+                .then(response => response.json())
+                .then(messages => {
+                    log.innerHTML = messages.map(msg => 
+                        `<div class="message-item mb-2" onclick="showIgnoreDialog('${msg.text.replace(/'/g, "\\'")}')">
+                            <span class="text-pink-500">[${msg.timestamp}]</span>
+                            <span class="ml-2">${msg.text}</span>
+                        </div>`
+                    ).join('');
+                    
+                    if (shouldScroll) {
+                        log.scrollTop = log.scrollHeight;
+                    }
+                });
+        }
+
+        // Add hover sound to all buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mouseenter', () => playSound(hoverSound));
+            button.addEventListener('click', () => playSound(clickSound));
+        });
+
+        // Add sounds to select elements
+        document.querySelectorAll('select').forEach(select => {
+            select.addEventListener('mouseenter', () => playSound(hoverSound));
+            select.addEventListener('click', () => playSound(dropdownSound));
+        });
+
+        // Add sounds to message items (delegated event handling)
+        document.getElementById('messageLog').addEventListener('mouseenter', (e) => {
+            if (e.target.classList.contains('message-item')) {
+                playSound(hoverSound);
+            }
+        }, true);
+
+
+        // Set up update intervals
+        setInterval(updateMessageLog, 1000);
+        setInterval(updateSensorData, 1000);
+
+        // Initial updates
+        updateSensorData();
+        updateMessageLog();
+    </script>
+</body>
+</html>
