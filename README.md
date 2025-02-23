@@ -96,7 +96,7 @@ Messages can be sent through:
 Message format:
 ```
 priority|message|[R,G,B]|speed|wav_path|use_espeak
-wav path is Optional just as long as pipe "||" is used. % pipes ||||| needs to be set or it will not work.
+wav path is Optional just as long as pipe "||" is used. 5 pipes ||||| needs to be set or it will not work.
 ```
 
 Example:
