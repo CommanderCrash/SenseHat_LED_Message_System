@@ -96,14 +96,16 @@ Messages can be sent through:
 Message format:
 ```
 priority|message|[R,G,B]|speed|wav_path|use_espeak
+wav path is Optional just as long as pipe "||" is used. % pipes ||||| needs to be set or it will not work.
 ```
 
 Example:
 ```python
 # Python example to send message
-echo "0|hello |[255,0,0]|0.1|path_to_your_audio_alert_on_host.mp3|1" | nc -U /mnt/ram/sense_hat_socket
+echo "0|hello |[255,0,0]|0.1|path_to_your_audio_alert_on_host.mp3|1" | nc -U /mnt/ram/sense_hat_socket # local
+echo "0|hello |[255,0,0]|0.1||0" | nc -U /mnt/ram/sense_hat_socket # No audio alert and no espeak local
 or
-echo "0|hello |[255,0,0]|0.1|path_to_your_audio_alert_on_host.mp3|1" | nc <IP_addr> <port>
+echo "0|hello |[255,0,0]|0.1|path_to_your_audio_alert_on_host.mp3|1" | nc <IP_addr> <port> # over network.
 ```
 
 ## 🛠️ Configuration
