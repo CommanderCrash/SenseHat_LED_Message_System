@@ -52,7 +52,7 @@ pip3 install sense-hat
 
 1. Clone the repository:
 ```bash
-git clone https://your-repository-url.git
+git clone https://github.com/CommanderCrash/SenseHat_LED_Message_System.git
 cd sense-hat-dashboard
 ```
 
