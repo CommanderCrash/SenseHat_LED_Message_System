@@ -134,6 +134,11 @@ sense-hat-dashboard/
 └── README.md                # This file
 ```
 
+## Video background names as follows
+Cyber theme: display.mp4
+Cherry theme: cherry-blossom.mp4
+Neon theme: neon-city.mp4
+
 ## 🔒 Security Considerations
 
 - The server is accessible to all devices on the network
