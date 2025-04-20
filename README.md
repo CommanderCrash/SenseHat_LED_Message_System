@@ -20,7 +20,7 @@
   - Priority-based message queue
   - Customizable scroll speed and colors
   - Text-to-speech capability
-- 🎨
+- 🎨 Theming
   - Video background
   - Real-time updates
   - Mobile-responsive design
