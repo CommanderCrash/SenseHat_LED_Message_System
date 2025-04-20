@@ -1,4 +1,4 @@
-# 🎮 Sense HAT Alert Dashboard v2.0🚨
+# 🎮 Sense HAT Alert Dashboard v2.1🚨
 
 ## By Commander Crash 💉💾☠️
 
